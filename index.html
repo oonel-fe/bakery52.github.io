@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bakery52 | Pedidos</title>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600&family=Nerko+One&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #fffaee; --blue: #285cac; --orange: #f74621; --white: #ffffff; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg); color: var(--blue); font-family: 'EB Garamond', serif; margin: 0; padding-bottom: 180px; } 
+        h1, h2, h3 { font-family: 'Nerko One', cursive; font-weight: normal; margin: 0; }
+        header { text-align: center; padding: 20px; font-size: 1.3em; }
+        .logo { max-width: 170px; }
+        
+        .cutoff-banner { background: var(--orange); color: white; text-align: center; padding: 12px; position: sticky; top: 0; z-index: 1000; font-family: 'Nerko One'; font-size: 1.1rem; }
+        .container { padding: 15px; max-width: 500px; margin: 0 auto; }
+        
+        .product-card { background: var(--white); border-radius: 15px; margin-bottom: 25px; overflow: hidden; box-shadow: 0 4px 10px rgba(40,92,172,0.08); border: 1px solid rgba(40,92,172,0.05); }
+        .product-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+        
+        .product-info { padding: 20px; }
+        .product-info h3 { font-size: 1.8rem; line-height: 1.1; margin-bottom: 5px; } 
+        .product-price { color: var(--orange); font-weight: bold; font-size: 1.4rem; }
+        
+        /* ALÉRGENOS ESTILO */
+        .allergens { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+        .allergen-tag { font-size: 0.75rem; display: flex; align-items: center; gap: 3px; background: #fdfaf0; padding: 3px 8px; border-radius: 20px; border: 0.5px solid #eee; }
+        .allergen-tag small { font-size: 0.65rem; color: #555; }
+
+        .qty-selector { display: flex; align-items: center; gap: 15px; justify-content: flex-end; margin-top: 10px; }
+        .btn-qty { background: var(--blue); color: white; border: none; width: 38px; height: 38px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        .order-form { background: white; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid rgba(40,92,172,0.1); }
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-family: 'EB Garamond'; font-size: 1rem; }
+        
+        .sticky-bar { 
+            position: fixed; bottom: 0; width: 100%; 
+            background: white; padding: 15px 25px; 
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1); 
+            z-index: 900; 
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        
+        .cart-breakdown {
+            font-size: 0.95rem;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 10px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .breakdown-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: 600; }
+        .breakdown-row span:last-child { color: var(--orange); }
+
+        .footer-controls { display: flex; justify-content: space-between; align-items: center; }
+        .btn-confirm { background: var(--orange); color: white; border: none; padding: 12px 30px; border-radius: 30px; font-family: 'Nerko One'; font-size: 1.4rem; cursor: pointer; }
+        .btn-confirm:disabled { background: #ccc; cursor: not-allowed; }
+
+        .hidden-element { display: none !important; }
+        .overlay { position: fixed; inset: 0; background: var(--bg); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 30px; }
+
+        /* Arreglo definitivo para el Checkbox de Datos */
+        #gdpr_check {
+        width: auto !important;      /* Obliga al cuadro a ser pequeño */
+        height: auto !important;     /* Evita que se estire */
+        margin: 4px 0 0 0 !important; /* Lo alinea con la primera línea de texto */
+        padding: 0 !important;       /* Quita el relleno de 12px que tienen los demás inputs */
+        cursor: pointer;
+        }
+
+        /* Alineación del texto al lado del cuadro */
+        #gdpr_check + label {
+        font-size: 0.9rem;
+        line-height: 1.2;
+        cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="cutoff-banner" class="cutoff-banner hidden-element">
+    ⚠️ PEDIDOS CERRADOS. Volvemos el próximo lunes.
+</div>
+
+<header>
+    <img src="https://i.postimg.cc/ryhHFM2M/Logo-naranjo-sin-fondo.png" alt="Logo Bakery52" class="logo">
+    <p style="margin-top:5px; font-style: italic;">Pan artesanal · Tenemos capacidad limitada, ¡no esperes a última hora!</p>
+</header>
+
+<div class="container">
+    <div id="catalog"></div>
+
+    <div class="order-form">
+        <h2 style="margin-top:0">Datos para retirar (Viernes)</h2>
+        <input type="text" id="name" placeholder="Tu nombre completo *" required>
+        <input type="tel" id="phone" placeholder="Tu WhatsApp *" required>
+        <select id="pickupTime" required>
+            <option value="">¿A qué hora pasas el viernes? (aprox.) *</option>
+            <option value="13:00">13:00h</option>
+            <option value="14:00">14:00h</option>
+            <option value="15:00">15:00h</option>
+            <option value="16:00">16:00h</option>
+            <option value="17:00">17:00h</option>
+            <option value="17:00">18:00h</option>
+        </select>
+        <textarea id="notes" rows="2" placeholder="Notas (ej: Sin sésamo)"></textarea>
+        <div class="gdpr" style="font-size: 0.85rem; display: flex; gap: 8px; margin-top: 10px; align-items: flex-start;">
+           <input type="checkbox" id="gdpr_check" required>
+            <label for="gdpr_check">Acepto que Bakery52 gestione mis datos para este confirmar este pedido e informarme. No compartiremos tus datos con terceros.</label>
+        </div>
+    </div>
+</div>
+
+<div class="sticky-bar" id="sticky-cart">
+    <div id="cart-breakdown" class="cart-breakdown hidden-element"></div>
+    <div class="footer-controls">
+        <div>
+            <small>Total pedido</small>
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--blue)" id="total-val">0,00€</div>
+        </div>
+        <button class="btn-confirm" id="submit-btn" onclick="sendOrder()" disabled>Confirmar</button>
+    </div>
+</div>
+
+<div id="success-screen" class="overlay" style="display: none;">
+    <h1 style="color:var(--orange); font-size: 3rem;">¡Pedido registrado!</h1>
+    <p>Pulsa "Enviar pedido" para que podamos ponernos en contacto y gestionar el pago.</p>
+    <br>
+    <button class="btn-confirm" id="wa-final-btn" style="width: 100%; max-width: 280px;">Enviar pedido</button>
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGexmvKzu83XuOWb0PXQJrHCKKT9fwxQkuYslhPinuLIgM6EP8FGU6w-fqbk3TLTE9Lg/exec";
+    
+    const products = [
+        { id: 'jm', name: 'Jalá M', price: 4.5, packPrice: 8.5, img: 'NFqqD5WQ/Jala-artesanal-M.png', desc1: 'Jalá artesanal con sésamo y avena (340g)*.', desc2: '¡Llevando 2 pagas solo 8,50€!' },
+        { id: 'jl', name: 'Jalá L', price: 6.5, packPrice: 12.0, img: '8cR80TSQ/Jala-artesanal-L.png', desc1: 'Jalá artesanal con sésamo y avena (630g)*.', desc2: 'Llevando 2 pagas solo 12,00€!' },
+        { id: 'jxl', name: 'Jalá XL', price: 9.0, packPrice: 16.5, img: 'wMXKG9pd/Jala-artesanal-XL.png', desc1: 'Jalá artesanal con sésamo y avena (920g)*.', desc2: '¡Llevando 2 pagas solo 16,50€!' }
+    ];
+
+    const allergenList = [
+        {e:'🌾', n:'Gluten'}, {e:'🥚', n:'Huevo'}, {e:'🥛', n:'Lácteos'}, {e:'🥨', n:'Sésamo'}, {e:'🥣', n:'Avena'}
+    ];
+
+    let cart = {};
+
+    function renderCatalog() {
+        const cat = document.getElementById('catalog');
+        products.forEach(p => {
+            cat.innerHTML += `
+                <div class="product-card">
+                    <img src="https://i.postimg.cc/${p.img}" class="product-img">
+                    <div class="product-info">
+                        <h3>${p.name}</h3>
+                        <span class="product-price">${p.price.toFixed(2)}€</span>
+                        <p style="font-size:1.1rem; color:#285CAC; margin: 8px 0;">${p.desc1}</p>
+                        <p style="font-size:1.1rem; font-weight: bold; color:#285CAC; margin: 8px 0;">${p.desc2}</p>
+                        
+                        <!-- ALÉRGENOS RESTAURADOS -->
+                        <div class="allergens">
+                            ${allergenList.map(a => `<span class="allergen-tag">${a.e} <small>${a.n}</small></span>`).join('')}
+                        </div>
+
+                        <div class="qty-selector">
+                            <button class="btn-qty" onclick="changeQty('${p.id}', -1)">-</button>
+                            <span id="q-${p.id}" style="min-width:40px; text-align:center; font-weight:bold; font-size:1.4rem;">0</span>
+                            <button class="btn-qty" onclick="changeQty('${p.id}', 1)">+</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+        checkCutoff();
+    }
+
+    function changeQty(id, delta) {
+        cart[id] = (cart[id] || 0) + delta;
+        if (cart[id] < 0) cart[id] = 0;
+        document.getElementById(`q-${id}`).innerText = cart[id];
+        calculateCart();
+    }
+
+    function calculateCart() {
+        let total = 0;
+        let breakdownHTML = "";
+        let hasItems = false;
+
+        products.forEach(p => {
+            const qty = cart[p.id] || 0;
+            if (qty > 0) {
+                hasItems = true;
+                const numPacks = Math.floor(qty / 2);
+                const numSingles = qty % 2;
+                
+                if (numPacks > 0) {
+                    const price = numPacks * p.packPrice;
+                    total += price;
+                    breakdownHTML += `<div class="breakdown-row"><span>${numPacks} Pack(s) ${p.name}</span> <span>${price.toFixed(2)}€</span></div>`;
+                }
+                if (numSingles > 0) {
+                    const price = numSingles * p.price;
+                    total += price;
+                    breakdownHTML += `<div class="breakdown-row"><span>1 ${p.name}</span> <span>${price.toFixed(2)}€</span></div>`;
+                }
+            }
+        });
+
+        const breakdownDiv = document.getElementById('cart-breakdown');
+        if (hasItems) {
+            breakdownDiv.innerHTML = breakdownHTML;
+            breakdownDiv.classList.remove('hidden-element');
+        } else {
+            breakdownDiv.classList.add('hidden-element');
+        }
+
+        document.getElementById('total-val').innerText = total.toFixed(2).replace('.', ',') + '€';
+        const isCutoff = document.getElementById('submit-btn').innerText === "Cerrado";
+        if(!isCutoff) document.getElementById('submit-btn').disabled = !hasItems;
+    }
+
+    function checkCutoff() {
+        const now = new Date();
+        const madrid = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Madrid"}));
+        const d = madrid.getDay(); const h = madrid.getHours();
+        const isClosed = (d === 0 || d === 4 || d === 5 || d === 6 || (d === 3 && h >= 20));
+        if (isClosed) {
+            document.getElementById('cutoff-banner').classList.remove('hidden-element');
+            const sBtn = document.getElementById('submit-btn');
+            sBtn.disabled = true; sBtn.innerText = "Cerrado";
+        }
+    }
+
+    async function sendOrder() {
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        const time = document.getElementById('pickupTime').value;
+        const gdpr = document.getElementById('gdpr_check').checked;
+        if(!name || !phone || !time || !gdpr) { alert("Faltan datos."); return; }
+
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true; btn.innerText = "Registrando...";
+
+        let summary = [];
+        products.forEach(p => {
+            const qty = cart[p.id] || 0;
+            if (qty > 0) {
+                const numP = Math.floor(qty / 2); const numS = qty % 2;
+                if(numP > 0) summary.push(`${numP} Pack(s) ${p.name}`);
+                if(numS > 0) summary.push(`${numS} ${p.name}`);
+            }
+        });
+
+        const data = {
+            nombre: name, telefono: phone, dia: "Viernes", hora: time,
+            notas: document.getElementById('notes').value,
+            total: document.getElementById('total-val').innerText,
+            items: summary.join(' + ')
+        };
+
+        try {
+            fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+            showSuccess(data, summary);
+        } catch (e) { showSuccess(data, summary); }
+    }
+
+    function showSuccess(data, summary) {
+        document.getElementById('success-screen').style.display = 'flex';
+        const msg = `Hola Bakery52! Soy ${data.nombre}.%0AQuiero confirmar mi pedido para el *Viernes* a las *${data.hora}h*:%0A${summary.map(s => '- ' + s).join('%0A')}%0A%0ATotal: ${data.total}%0ANotas: ${data.notes || 'Ninguna'}`;
+        document.getElementById('wa-final-btn').onclick = () => window.open(`https://wa.me/34606700154?text=${msg}`, '_blank');
+    }
+
+    renderCatalog();
+</script>
+</body>
+</html>
