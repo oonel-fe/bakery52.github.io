@@ -221,9 +221,14 @@
         } catch (e) { showSuccess(data, summary); }
     }
 
-    function showSuccess(data, summary) {
+   function showSuccess(data, summary) {
         document.getElementById('success-screen').style.display = 'flex';
-        const msg = `Hola Bakery52! Soy ${data.nombre}.%0AQuiero confirmar mi pedido para el *Viernes* a las *${data.hora}h*:%0A${summary.map(s => '- ' + s).join('%0A')}%0A%0ATotal: ${data.total}%0ANotas: ${data.notes || 'Ninguna'}`;
+        
+        // CORRECCIÓN AQUÍ: Cambiamos data.notes por data.notas
+        const mensajeNotas = data.notas.trim() !== "" ? data.notas : 'Ninguna';
+        
+        const msg = `Hola Bakery52! Soy ${data.nombre}.%0AQuiero confirmar mi pedido para el *Viernes* a las *${data.hora}h*:%0A${summary.map(s => '- ' + s).join('%0A')}%0A%0ATotal: ${data.total}%0ANotas: ${mensajeNotas}`;
+        
         document.getElementById('wa-final-btn').onclick = () => window.open(`https://wa.me/34606700154?text=${msg}`, '_blank');
     }
 
